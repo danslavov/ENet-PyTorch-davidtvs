@@ -318,7 +318,5 @@ if __name__ == '__main__':
             print(model)
 
         test(model, test_loader, w_class, class_encoding)
-        
-        
-        print('1234')
+
 
