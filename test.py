@@ -56,19 +56,20 @@ class Test:
 
             # TODO: MY CODE BEGIN
 
-            # Visualize input image
+            tmp_dir = 'C:/Users/Admin/Desktop/tmp'
+            file_ext = 'png'
+
             inp = inputs[0].cpu().numpy()
             inp = np.transpose(inp, (1, 2, 0))
-            io.imsave('C:/Users/User/Desktop/tmp/input_label_output/inp.jpg', inp)
+            io.imsave('{}/inp.{}'.format(tmp_dir, file_ext), inp)
 
-            # Visualize ground truth mask
             lab = labels[0].cpu().numpy()
             lab = np.transpose(lab, (1, 2, 0))
-            io.imsave('C:/Users/User/Desktop/tmp/input_label_output/lab.jpg', lab)
+            io.imsave('{}/lab.{}'.format(tmp_dir, file_ext), lab)
 
-            # Visualize each heatmap (each channel of the output)
             with torch.no_grad():
                 heatmaps = outputs[0].cpu().numpy()
+
                 for i in range(12):
                     print(i)
                     single_map = heatmaps[i]
@@ -77,7 +78,7 @@ class Test:
                     print('min {}'.format(min_value))
                     print('max {}'.format(max_value))
                     print('---------------')
-                    io.imsave('C:/Users/User/Desktop/tmp/input_label_output/outp_{}.jpg'.format(str(i)), single_map)
+                    io.imsave('{}/outp_{}.{}'.format(tmp_dir, i, file_ext), single_map)
             exit()
 
             # extract the path to the image in order to use its name and extension
@@ -85,10 +86,10 @@ class Test:
             # create class map (i.e. mask) with greyscale pixels close to black
             class_map_numpy = outputs[0].max(0)[1].byte().cpu().data.numpy()
             save_masks(img_path, class_map_numpy)
-
             exit()
 
             # TODO: MY CODE END
+
 
 
 

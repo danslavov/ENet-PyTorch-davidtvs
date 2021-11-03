@@ -7,6 +7,7 @@ import cv2
 from args import get_arguments
 
 
+# TODO: check what this function does
 def batch_transform(batch, transform):
     """Applies a transform to a batch of samples.
 

@@ -53,14 +53,17 @@ class Train:
 
             # TODO: MY CODE BEGIN
 
+            # tmp_dir = 'C:/Users/Admin/Desktop/tmp'
+            # file_ext = 'png'
+            #
             # inp = inputs[0].cpu().numpy()
             # inp = np.transpose(inp, (1, 2, 0))
-            # io.imsave('C:/Users/User/Desktop/tmp/input_label_output/inp.jpg', inp)
+            # io.imsave('{}/inp.{}'.format(tmp_dir, file_ext), inp)
             #
             # lab = labels[0].cpu().numpy()
             # lab = np.transpose(lab, (1, 2, 0))
-            # io.imsave('C:/Users/User/Desktop/tmp/input_label_output/lab.jpg', lab)
-
+            # io.imsave('{}/lab.{}'.format(tmp_dir, file_ext), lab)
+            #
             # with torch.no_grad():
             #     heatmaps = outputs[0].cpu().numpy()
             #
@@ -72,7 +75,7 @@ class Train:
             #         print('min {}'.format(min_value))
             #         print('max {}'.format(max_value))
             #         print('---------------')
-            #         io.imsave('C:/Users/User/Desktop/tmp/input_label_output/outp_{}.jpg'.format(str(i)), single_map)
+            #         io.imsave('{}/outp_{}.{}'.format(tmp_dir, i, file_ext), single_map)
             #
             # print()
             # exit()

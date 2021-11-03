@@ -71,6 +71,12 @@ def get_arguments():
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(
+        "--input-image-extension",
+        type=str,
+        default=".png",
+        help="File extension of the input images of the selected dataset. "
+             "Default: .png")
+    parser.add_argument(
         "--height",
         type=int,
         default=360,
@@ -96,7 +102,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=2,
+        default=4,
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
@@ -109,7 +115,7 @@ def get_arguments():
               "predictions."))
     parser.add_argument(
         "--device",
-        default='cpu',
+        default='cuda',
         help="Device on which the network will be trained. Default: cuda")
 
     # Storage settings

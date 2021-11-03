@@ -2,6 +2,10 @@ import os
 from collections import OrderedDict
 import torch.utils.data as data
 from . import utils
+from args import get_arguments
+
+# Get the arguments
+args = get_arguments()
 
 
 class CamVid(data.Dataset):
@@ -23,21 +27,22 @@ class CamVid(data.Dataset):
     """
     # Training dataset root folders
     train_folder = 'train'
-    train_lbl_folder = 'trainannot'
+    train_lbl_folder = 'train_labels'
 
     # Validation dataset root folders
     val_folder = 'val'
-    val_lbl_folder = 'valannot'
+    val_lbl_folder = 'val_labels'
 
     # Test dataset root folders
     test_folder = 'test'
-    test_lbl_folder = 'testannot'
+    test_lbl_folder = 'test_labels'
 
     # Images extension
-    # img_extension = '.png'  # TODO: orig
-    img_extension = '.jpg'
+    img_extension = args.input_image_extension
 
     # Default encoding for pixel value, class name, and class color
+    # TODO: Dict ordering is exactly the same as channels order in the output heatmaps,
+    # i.e. channel 0 represents sky, channel 1 represents building, etc.
     color_encoding = OrderedDict([
         ('sky', (128, 128, 128)),
         ('building', (128, 0, 0)),
