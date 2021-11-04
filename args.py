@@ -102,7 +102,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=4,
+        default=2,
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
@@ -111,11 +111,12 @@ def get_arguments():
     parser.add_argument(
         "--imshow-batch",
         action='store_true',
+        # default='True',  # TODO: When imshow-batch is Ture, it performs label_to_rgb transform
         help=("Displays batch images when loading the dataset and making "
               "predictions."))
     parser.add_argument(
         "--device",
-        default='cuda',
+        default='cpu',
         help="Device on which the network will be trained. Default: cuda")
 
     # Storage settings
