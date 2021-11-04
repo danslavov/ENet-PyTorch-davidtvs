@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import skimage.io as io
-from utils import save_masks
+from utils import save_masks, rgb_to_class_channels
 from utils import batch_transform
 
 
@@ -45,10 +45,12 @@ class Test:
             inputs = batch_data[0].to(self.device)  # shape: Tensor 1, 3, 360, 480; range: 0 to 1
             labels = batch_data[1].to(self.device)  # shape: Tensor 1, 3, 360, 480; range: 0 to 255
 
+            #TODO: mine; improve for batch processing
+            labels = rgb_to_class_channels(labels[0], 1, 0, 12)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
+
             with torch.no_grad():
                 # Forward propagation
                 outputs = self.model(inputs)  # shape: Tensor 1, 12, 360, 480; range: -17 to 13 (varies per channel)
-                outputs_3_channels = torch.full(labels.size(), -17)
 
 
 

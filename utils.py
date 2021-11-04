@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 import torchvision
 import numpy as np
@@ -5,6 +7,46 @@ import matplotlib.pyplot as plt
 import os
 import cv2
 from args import get_arguments
+from torchvision import transforms
+from PIL import Image
+
+
+color_encoding = OrderedDict([
+        ('sky', (128, 128, 128)),
+        ('building', (128, 0, 0)),
+        ('pole', (192, 192, 128)),
+        # ('road_marking', (255, 69, 0)),  #  remove the road_marking class from the CamVid dataset as it's merged with the road class
+        ('road', (128, 64, 128)),
+        ('pavement', (60, 40, 222)),
+        ('tree', (128, 128, 0)),
+        ('sign_symbol', (192, 128, 128)),
+        ('fence', (64, 64, 128)),
+        ('car', (64, 0, 128)),
+        ('pedestrian', (64, 64, 0)),
+        ('bicyclist', (0, 128, 192)),
+        ('unlabeled', (0, 0, 0))
+    ])
+
+palette = [[128, 64, 128],
+           [244, 35, 232],
+           [70, 70, 70],
+           [102, 102, 156],
+           [190, 153, 153],
+           [153, 153, 153],
+           [250, 170, 30],
+           [220, 220, 0],
+           [107, 142, 35],
+           [152, 251, 152],
+           [70, 130, 180],
+           [220, 20, 60],
+           [255, 0, 0],
+           [0, 0, 142],
+           [0, 0, 70],
+           [0, 60, 100],
+           [0, 80, 100],
+           [0, 0, 230],
+           [119, 11, 32],
+           [0, 0, 0]]
 
 
 # TODO: check what this function does
@@ -163,7 +205,7 @@ def save_masks(img_path, class_map_numpy):
     class_map_numpy_color = np.zeros((args.height, args.width, 3),
                                      dtype=np.uint8)  # from greyscale (1 channel) to color (3 channels)
     for idx in range(args.num_classes):
-        [r, g, b] = pallete[idx]
+        [r, g, b] = palette[idx]
         class_map_numpy_color[class_map_numpy == idx] = [b, g, r]
 
     # save masks
@@ -172,27 +214,32 @@ def save_masks(img_path, class_map_numpy):
     cv2.imwrite(os.path.join(dir_grey, img_name_and_extension), class_map_numpy_grey)
     cv2.imwrite(os.path.join(dir_color, img_name_and_extension), class_map_numpy_color)
 
-pallete = [[128, 64, 128],
-           [244, 35, 232],
-           [70, 70, 70],
-           [102, 102, 156],
-           [190, 153, 153],
-           [153, 153, 153],
-           [250, 170, 30],
-           [220, 220, 0],
-           [107, 142, 35],
-           [152, 251, 152],
-           [70, 130, 180],
-           [220, 20, 60],
-           [255, 0, 0],
-           [0, 0, 142],
-           [0, 0, 70],
-           [0, 60, 100],
-           [0, 80, 100],
-           [0, 0, 230],
-           [119, 11, 32],
-           [0, 0, 0]]
 
+def rgb_to_class_channels(mask, batch_size, image_number, class_count,
+                          colors=color_encoding, mask_channels=3, high_value=20, low_value=-20):
+    """ Converts RGB ground truth mask to multichannel tensor in order to compare it with the model output. """
 
-def abc():
-    pass
+    x = mask.size()[1]
+    y = mask.size()[2]
+
+    multichannel_tensor = torch.full((batch_size, class_count, x, y), low_value)  # the same size as the model output
+
+    for class_number in range(len(colors)):
+        color = list(colors.items())[class_number][1]
+        red_value = color[0]
+        green_value = color[1]
+        blue_value = color[2]
+
+        cond_red = mask[0] == red_value
+        cond_green = mask[1] == green_value
+        cond_blue = mask[2] == blue_value
+
+        cond_image = torch.zeros(mask_channels, x, y, dtype=torch.bool)
+        cond_image[0] = cond_red
+        cond_image[1] = cond_green
+        cond_image[2] = cond_blue
+        cond_image_1_channel = torch.logical_and(torch.logical_and(cond_image[0], cond_image[1]), cond_image[2])
+
+        multichannel_tensor[image_number][class_number][cond_image_1_channel] = high_value
+
+    return multichannel_tensor
