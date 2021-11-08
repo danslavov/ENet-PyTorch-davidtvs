@@ -8,6 +8,10 @@ from args import get_arguments
 args = get_arguments()
 
 
+def get_color_encoding():
+    return CamVid.color_encoding
+
+
 class CamVid(data.Dataset):
     """CamVid dataset loader where the dataset is arranged as in
     https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid.

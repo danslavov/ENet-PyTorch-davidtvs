@@ -112,16 +112,17 @@ def load_dataset(dataset):
         utils.imshow_batch(images, color_labels)
 
     # Get class weights from the selected weighing technique
-    print("\nWeighing technique:", args.weighing)
-    print("Computing class weights...")
-    print("(this can take a while depending on the dataset size)")
     class_weights = 0
-    if args.weighing.lower() == 'enet':
-        class_weights = enet_weighing(train_loader, num_classes)
-    elif args.weighing.lower() == 'mfb':
-        class_weights = median_freq_balancing(train_loader, num_classes)
-    else:
+    print("\nWeighing technique:", args.weighing)
+    if args.weighing.lower() == 'none':
         class_weights = None
+    else:
+        print("Computing class weights...")
+        print("(this can take a while depending on the dataset size)")
+        if args.weighing.lower() == 'enet':
+            class_weights = enet_weighing(train_loader, num_classes)  # TODO: need to understand whether and why to use class_weights !!!
+        elif args.weighing.lower() == 'mfb':
+            class_weights = median_freq_balancing(train_loader, num_classes)
 
     if class_weights is not None:
         class_weights = torch.from_numpy(class_weights).float().to(device)
@@ -144,7 +145,7 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # Intialize ENet
     model = ENet(num_classes).to(device)
     # Check if the network architecture is correct
-    print(model)
+    # print(model)
 
     # We are going to use the CrossEntropyLoss loss function as it's most
     # frequentely used in classification problems with multiple classes which
@@ -297,6 +298,9 @@ if __name__ == '__main__':
     loaders, w_class, class_encoding = load_dataset(dataset)
     train_loader, val_loader, test_loader = loaders
 
+    # TODO: mine. Empty GPU cache
+    torch.cuda.empty_cache()
+
     if args.mode.lower() in {'train', 'full'}:
         model = train(train_loader, val_loader, w_class, class_encoding)
 
@@ -311,10 +315,15 @@ if __name__ == '__main__':
         optimizer = optim.Adam(model.parameters())
 
         # Load the previoulsy saved model state to the ENet model
-        model = utils.load_checkpoint(model, optimizer, args.save_dir,
+        # model = utils.load_checkpoint(model, optimizer, args.save_dir,
+        #                               args.name)[0]
+
+        # Load the pre-trained model state to the ENet model
+        # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
+        model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
                                       args.name)[0]
 
-        if args.mode.lower() == 'test':
-            print(model)
+        # if args.mode.lower() == 'test':
+        #     print(model)
 
         test(model, test_loader, w_class, class_encoding)

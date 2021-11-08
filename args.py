@@ -27,12 +27,12 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=1,
+        default=8,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
         type=int,
-        default=2,
+        default=100,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
@@ -89,7 +89,7 @@ def get_arguments():
     parser.add_argument(
         "--weighing",
         choices=['enet', 'mfb', 'none'],
-        default='ENet',
+        default='none',
         help="The class weighing technique to apply to the dataset. "
         "Default: enet")
     parser.add_argument(
@@ -102,7 +102,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=2,
+        default=3,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
@@ -111,12 +111,13 @@ def get_arguments():
     parser.add_argument(
         "--imshow-batch",
         action='store_true',
-        # default='True',  # TODO: When imshow-batch is Ture, it performs label_to_rgb transform
+        # default='True',
+        # TODO: When imshow-batch is True, it tries to performs label_to_rgb transform, but gives exception
         help=("Displays batch images when loading the dataset and making "
               "predictions."))
     parser.add_argument(
         "--device",
-        default='cpu',
+        default='cuda',
         help="Device on which the network will be trained. Default: cuda")
 
     # Storage settings
@@ -130,5 +131,10 @@ def get_arguments():
         type=str,
         default='save/ENet_CamVid',
         help="The directory where models are saved. Default: save")
+    parser.add_argument(
+        "--save-dir-pretrained",
+        type=str,
+        default='save/pretrained/ENet_CamVid',
+        help="The directory where the pre-trained models are saved. Downloaded from: https://github.com/davidtvs/PyTorch-ENet/tree/master/save/ENet_CamVid . Default: save/pretrained/ENet_CamVid")
 
     return parser.parse_args()

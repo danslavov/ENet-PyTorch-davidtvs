@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import skimage.io as io
 
+from utils import rgb_to_class_channels
+
 
 class Train:
     """Performs the training of ``model`` given a training dataset data
@@ -43,11 +45,14 @@ class Train:
         for step, batch_data in enumerate(self.data_loader):
             # Get the inputs and labels
             inputs = batch_data[0].to(self.device)
-            labels = batch_data[1].to(self.device)
+            labels = batch_data[1]#.to(self.device)
 
             # Forward propagation
             outputs = self.model(inputs)
-            # outputs_1 = torch.argmax(outputs, dim=1)  # TODO
+
+            # TODO: mine; converts mask from 3-channel to class-channel
+            labels = rgb_to_class_channels(labels, 12)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
+            labels = labels.to(self.device)
 
 
 

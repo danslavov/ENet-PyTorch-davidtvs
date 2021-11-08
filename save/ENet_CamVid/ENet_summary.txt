@@ -1,25 +1,27 @@
 ARGUMENTS
-batch_size: 10
+batch_size: 8
 dataset: camvid
-dataset_dir: ../CamVid/
+dataset_dir: data/CamVid
 device: cuda
-epochs: 300
+epochs: 100
 height: 360
 ignore_unlabeled: True
 imshow_batch: False
+input_image_extension: .png
 learning_rate: 0.0005
 lr_decay: 0.1
 lr_decay_epochs: 100
-mode: full
+mode: train
 name: ENet
 print_step: False
 resume: False
-save_dir: save/new_camvid/
-weighing: ENet
+save_dir: save/ENet_CamVid
+save_dir_pretrained: save/pretrained/ENet_CamVid
+weighing: none
 weight_decay: 0.0002
 width: 480
-workers: 4
+workers: 3
 
 BEST VALIDATION
-Epoch: 280
-Mean IoU: 0.6518655444842216
+Epoch: 20
+Mean IoU: 0.0278539640269143
