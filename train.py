@@ -51,7 +51,7 @@ class Train:
             outputs = self.model(inputs)
 
             # TODO: mine; converts mask from 3-channel to class-channel
-            labels = rgb_to_class_channels(labels, 12)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
+            labels = rgb_to_class_channels(labels)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
             labels = labels.to(self.device)
 
 

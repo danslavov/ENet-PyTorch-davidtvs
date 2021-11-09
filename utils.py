@@ -252,7 +252,7 @@ def rgb_to_class_channels(batch, high_value=20, low_value=-20):
     return multichannel_tensor
 
 
-def class_channels_to_rgb(input_batch, output_batch):
+def class_channels_to_rgb(input_batch, output_batch, label_batch):
 
     """ Converts multichannel tensor to RGB image -- i.e. model output to final mask. """
     colors = get_color_encoding()
@@ -261,29 +261,37 @@ def class_channels_to_rgb(input_batch, output_batch):
     rgb_batch = torch.zeros(rgb_batch_size)
     counter = 0  # TODO: get input image name and use it for masks names
 
-    for input_image, multichannel_tensor in zip(input_batch, output_batch):
+    for input_tensor, output_tensor, label_tensor in zip(input_batch, output_batch, label_batch):
 
         # for each pixel:
         # get the channel number where this pixel has largest value (argmax by dim=0)
         # and write this number as pixel value in the resulting 1-channel ndarray
-        class_map = torch.argmax(multichannel_tensor, 0).byte().cpu().data.numpy()
-        cv2.imwrite('data/CamVid/results/grey/{}.png'.format(counter), class_map)
+        class_map_tensor = torch.argmax(output_tensor, 0)
+        class_map_ndarray = class_map_tensor.byte().cpu().data.numpy()
+        # cv2.imwrite('data/CamVid/results/grey/{}.png'.format(counter), class_map)
 
         # convert the class_map to RGB image
-        class_map_color = np.zeros((input_image.shape[1], input_image.shape[2], input_image.shape[0]), dtype=np.uint8)
+        # TODO: make color class map from class_map_tensor (not class_map_ndarray)
+        class_map_color = np.zeros((input_tensor.shape[1], input_tensor.shape[2], input_tensor.shape[0]), dtype=np.uint8)
         for class_number in range(len(colors)):
             color = list(colors.items())[class_number][1]
             [r, g, b] = color
-            class_map_color[class_map == class_number] = [b, g, r]
-        cv2.imwrite('data/CamVid/results/color/{}.png'.format(counter), class_map_color)
-        counter += 1
+            class_map_color[class_map_ndarray == class_number] = [b, g, r]
+        # cv2.imwrite('data/CamVid/results/color/{}.png'.format(counter), class_map_color)
 
-        # TODO:
-        # overlayed = cv2.addWeighted(input_image, 0.5, class_map_color, 0.5, 0)
+        # save ground-truth mask overlayed with output mask
+        # label_image = label_tensor.byte().cpu().data.numpy()
+        # label_image = np.moveaxis(label_image, 0, -1)
+        # cv2.imwrite('data/CamVid/results/label/{}.png'.format(counter), label_image)
+        # overlayed = cv2.addWeighted(label_image, 0.5, class_map_color, 0.5, 0)
         # cv2.imwrite('data/CamVid/results/overlayed/{}.png'.format(counter), overlayed)
 
-        # put the RGB image into the resulting tensor; TODO: reorder dimensions
+
+        # put the RGB image into the resulting tensor
+        class_map_color = np.moveaxis(class_map_color, -1, 0)
         rgb_batch[counter] = torch.from_numpy(class_map_color)
+
+        counter += 1
 
     return rgb_batch
 

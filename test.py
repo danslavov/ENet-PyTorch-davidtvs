@@ -48,8 +48,11 @@ class Test:
             with torch.no_grad():
                 # Forward propagation
                 outputs = self.model(inputs)  # shape: Tensor 1, 12, 360, 480; range: -17 to 13 (varies per channel)
-                # TODO: mine; saves outputs as images (plain masks and overlayed masks)
-                rgb_outputs = class_channels_to_rgb(inputs, outputs)  # TODO: try computing the cost function with these outputs
+
+                # TODO: mine
+                # Converts outputs from class-channel to 3-channel
+                # Also can save resulting images (plain masks and overlayed masks)
+                rgb_outputs = class_channels_to_rgb(inputs, outputs, labels)  # TODO: try computing the cost function with these outputs
 
             # TODO: mine; converts mask from 3-channel to class-channel
             labels = rgb_to_class_channels(labels)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20

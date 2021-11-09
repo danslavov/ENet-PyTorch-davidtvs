@@ -314,10 +314,6 @@ if __name__ == '__main__':
         # checkpoint
         optimizer = optim.Adam(model.parameters())
 
-        # Load the previoulsy saved model state to the ENet model
-        # model = utils.load_checkpoint(model, optimizer, args.save_dir,
-        #                               args.name)[0]
-
         # Load the pre-trained model state to the ENet model
         # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
         model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
