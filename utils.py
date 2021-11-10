@@ -52,7 +52,6 @@ palette = [[128, 64, 128],
            [0, 0, 0]]
 
 
-# TODO: check what this function does
 def batch_transform(batch, transform):
     """Applies a transform to a batch of samples.
 
@@ -163,8 +162,8 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
         model_path), "The model file \"{0}\" doesn't exist.".format(filename)
 
     # Load the stored model parameters to the model instance
-    checkpoint = torch.load(model_path)  # TODO: orig -- to load on GPU
-    # checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # modified to load on CPU
+    checkpoint = torch.load(model_path)  # INFO: orig -- to load on GPU
+    # checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # INFO: to load on CPU
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     epoch = checkpoint['epoch']
@@ -195,7 +194,7 @@ def relabel(img):
     return img
 
 
-def save_masks(img_path, class_map_numpy):  # TODO: mine
+def save_masks(img_path, class_map_numpy):  # INFO: mine
 
     # Get the arguments
     args = get_arguments()
@@ -252,6 +251,36 @@ def rgb_to_class_channels(batch, high_value=20, low_value=-20):
     return multichannel_tensor
 
 
+def rgb_to_class_map(batch):
+    """ Converts RGB ground truth mask to grey-level class map (0-channel tensor)
+     where each color combination becomes the corresponding class number. """
+
+    colors = get_color_encoding()
+    class_count = len(colors)
+    batch_size = list(batch.size())
+    del batch_size[1]  # remove the channel dimension, as it won't be needed for loss function computation
+    class_map = torch.full(batch_size, class_count-1, dtype=torch.int64)
+    mask_number = 0
+
+    for mask in batch:
+        for class_number in range(len(colors)):
+            color = list(colors.items())[class_number][1]
+            red_value = color[0]
+            green_value = color[1]
+            blue_value = color[2]
+
+            cond_red = mask[0] == red_value
+            cond_green = mask[1] == green_value
+            cond_blue = mask[2] == blue_value
+
+            cond_matrix = torch.logical_and(torch.logical_and(cond_red, cond_blue), cond_green)
+            # cond_matrix = torch.unsqueeze(cond_matrix, 0)  # add the channel dimension
+            class_map[mask_number][cond_matrix] = class_number  # for a single image
+        mask_number += 1
+
+    return class_map
+
+
 def class_channels_to_rgb(input_batch, output_batch, label_batch):
 
     """ Converts multichannel tensor to RGB image -- i.e. model output to final mask. """
@@ -277,7 +306,7 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
             color = list(colors.items())[class_number][1]
             [r, g, b] = color
             class_map_color[class_map_ndarray == class_number] = [b, g, r]
-        # cv2.imwrite('data/CamVid/results/color/{}.png'.format(counter), class_map_color)
+        cv2.imwrite('data/CamVid/results/color/{}.png'.format(counter), class_map_color)
 
         # save ground-truth mask overlayed with output mask
         # label_image = label_tensor.byte().cpu().data.numpy()

@@ -3,7 +3,7 @@ batch_size: 8
 dataset: camvid
 dataset_dir: data/CamVid
 device: cuda
-epochs: 100
+epochs: 300
 height: 360
 ignore_unlabeled: True
 imshow_batch: False
@@ -23,5 +23,5 @@ width: 480
 workers: 3
 
 BEST VALIDATION
-Epoch: 20
-Mean IoU: 0.0278539640269143
+Epoch: 250
+Mean IoU: 0.6677512513154306

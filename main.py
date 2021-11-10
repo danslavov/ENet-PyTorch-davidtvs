@@ -1,4 +1,5 @@
 import os, os.path
+import time
 
 import torch
 import torch.nn as nn
@@ -148,7 +149,7 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # print(model)
 
     # We are going to use the CrossEntropyLoss loss function as it's most
-    # frequentely used in classification problems with multiple classes which
+    # frequently used in classification problems with multiple classes which
     # fits the problem. This criterion  combines LogSoftMax and NLLLoss.
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
@@ -298,11 +299,19 @@ if __name__ == '__main__':
     loaders, w_class, class_encoding = load_dataset(dataset)
     train_loader, val_loader, test_loader = loaders
 
-    # TODO: mine. Empty GPU cache
+    # INFO: mine. Empty GPU cache
     torch.cuda.empty_cache()
 
     if args.mode.lower() in {'train', 'full'}:
+        start = time.time()
         model = train(train_loader, val_loader, w_class, class_encoding)
+        end = time.time()
+        image_count = len(train_loader.dataset.train_data)
+        duration = end - start
+        duration_per_epoch = duration / args.epochs
+        duration_per_image = duration / image_count
+        print('workers * batch: {}\ntime per epoch: {} s\ntime per image: {} s\ntotal time: {} s'
+              .format(args.batch_size * args.workers, duration_per_epoch, duration_per_image, duration))
 
     if args.mode.lower() in {'test', 'full'}:
         if args.mode.lower() == 'test':

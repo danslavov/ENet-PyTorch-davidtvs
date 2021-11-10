@@ -12,7 +12,7 @@ def get_arguments():
         "--mode",
         "-m",
         choices=['train', 'test', 'full'],
-        default='test',
+        default='train',
         help=("train: performs training and validation; test: tests the model "
               "found in \"--save-dir\" with name \"--name\" on \"--dataset\"; "
               "full: combines train and test modes. Default: train"))
@@ -27,12 +27,12 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=1,
+        default=8,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
         type=int,
-        default=100,
+        default=300,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
@@ -67,7 +67,7 @@ def get_arguments():
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="data/CamVid/one_image",
+        default="data/CamVid",
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(
@@ -102,7 +102,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=1,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
+        default=3,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
@@ -112,7 +112,7 @@ def get_arguments():
         "--imshow-batch",
         action='store_true',
         # default='True',
-        # TODO: When imshow-batch is True, it tries to performs label_to_rgb transform, but gives exception
+        # INFO: When imshow-batch is True, it tries to performs label_to_rgb transform, but gives exception
         help=("Displays batch images when loading the dataset and making "
               "predictions."))
     parser.add_argument(

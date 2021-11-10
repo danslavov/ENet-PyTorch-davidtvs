@@ -45,22 +45,24 @@ class CamVid(data.Dataset):
     img_extension = args.input_image_extension
 
     # Default encoding for pixel value, class name, and class color
-    # TODO: Dict ordering is exactly the same as channels order in the output heatmaps,
+    # INFO: Dict ordering is exactly the same as channels order in the output heatmaps,
     # i.e. channel 0 represents sky, channel 1 represents building, etc.
+    # Some classes in the dataset don't have the same encoding as here,
+    # (e.g. pavement is 0, 0, 192) and therefore they return mean IoU = 0
     color_encoding = OrderedDict([
-        ('sky', (128, 128, 128)),
-        ('building', (128, 0, 0)),
-        ('pole', (192, 192, 128)),
-        ('road_marking', (255, 69, 0)),
-        ('road', (128, 64, 128)),
-        ('pavement', (60, 40, 222)),
-        ('tree', (128, 128, 0)),
-        ('sign_symbol', (192, 128, 128)),
-        ('fence', (64, 64, 128)),
-        ('car', (64, 0, 128)),
-        ('pedestrian', (64, 64, 0)),
-        ('bicyclist', (0, 128, 192)),
-        ('unlabeled', (0, 0, 0))
+        ('sky', (128, 128, 128)),       # 0
+        ('building', (128, 0, 0)),      # 1
+        ('pole', (192, 192, 128)),      # 2
+        ('road_marking', (255, 69, 0)), # gets deleted during loading
+        ('road', (128, 64, 128)),       # 3
+        ('pavement', (60, 40, 222)),    # 4
+        ('tree', (128, 128, 0)),        # 5
+        ('sign_symbol', (192, 128, 128)),# 6
+        ('fence', (64, 64, 128)),       # 7
+        ('car', (64, 0, 128)),          # 8
+        ('pedestrian', (64, 64, 0)),    # 9
+        ('bicyclist', (0, 128, 192)),   # 10
+        ('unlabeled', (0, 0, 0))        # 11
     ])
 
     def __init__(self,

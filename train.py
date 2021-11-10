@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import skimage.io as io
 
-from utils import rgb_to_class_channels
+from utils import rgb_to_class_channels, rgb_to_class_map
 
 
 class Train:
@@ -46,49 +46,18 @@ class Train:
             # Get the inputs and labels
             inputs = batch_data[0].to(self.device)
             labels = batch_data[1]#.to(self.device)
+            # INFO: Don't pass labels to the device yet, because they have to be transformed as below.
 
             # Forward propagation
             outputs = self.model(inputs)
 
-            # TODO: mine; converts mask from 3-channel to class-channel
-            labels = rgb_to_class_channels(labels)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
+            # INFO: mine; converts mask from 3-channel to class-channel
+            # labels = rgb_to_class_channels(labels)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
+
+            # INFO: mine; converts labels from 3-channel to 0-channel
+            labels = rgb_to_class_map(labels)
+
             labels = labels.to(self.device)
-
-
-
-            # TODO: MY CODE BEGIN
-
-            # tmp_dir = 'C:/Users/Admin/Desktop/tmp'
-            # file_ext = 'png'
-            #
-            # inp = inputs[0].cpu().numpy()
-            # inp = np.transpose(inp, (1, 2, 0))
-            # io.imsave('{}/inp.{}'.format(tmp_dir, file_ext), inp)
-            #
-            # lab = labels[0].cpu().numpy()
-            # lab = np.transpose(lab, (1, 2, 0))
-            # io.imsave('{}/lab.{}'.format(tmp_dir, file_ext), lab)
-            #
-            # with torch.no_grad():
-            #     heatmaps = outputs[0].cpu().numpy()
-            #
-            #     for i in range(12):
-            #         print(i)
-            #         single_map = heatmaps[i]
-            #         min_value = np.min(single_map)
-            #         max_value = np.max(single_map)
-            #         print('min {}'.format(min_value))
-            #         print('max {}'.format(max_value))
-            #         print('---------------')
-            #         io.imsave('{}/outp_{}.{}'.format(tmp_dir, i, file_ext), single_map)
-            #
-            # print()
-            # exit()
-
-            # TODO: MY CODE END
-
-
-
 
             # Loss computation
             loss = self.criterion(outputs, labels)
