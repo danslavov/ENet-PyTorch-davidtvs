@@ -137,7 +137,7 @@ def save_checkpoint(model, optimizer, epoch, miou, args):
 
 
 def load_checkpoint(model, optimizer, folder_dir, filename):
-    """Saves the model in a specified directory with a specified name.save
+    """Loads the model from a specified directory with a specified name.
 
     Keyword arguments:
     - model (``nn.Module``): The stored model state is copied to this model

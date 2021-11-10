@@ -32,7 +32,7 @@ def get_arguments():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=300,
+        default=2,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
@@ -67,7 +67,7 @@ def get_arguments():
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="data/CamVid",
+        default="data/CamVid/one_image",
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(

@@ -170,6 +170,24 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         ignore_index = None
     metric = IoU(num_classes, ignore_index=ignore_index)
 
+    # INFO: mine begins
+    # Load the pre-trained model state to the ENet model
+    # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
+
+    # model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
+    #                               args.name)[0]
+    #
+    # module_list = [module for module in model.modules()]
+    #
+    # # Freeze all parameters in the last layer
+    # for parameter in module_list[-1].parameters():
+    #     parameter.requires_grad = False
+    #
+    # exit()
+    # INFO: mine ends
+
+
+
     # Optionally resume from a checkpoint
     if args.resume:
         model, optimizer, start_epoch, best_miou = utils.load_checkpoint(
