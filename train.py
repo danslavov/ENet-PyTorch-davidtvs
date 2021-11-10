@@ -48,6 +48,9 @@ class Train:
             labels = batch_data[1]#.to(self.device)
             # INFO: Don't pass labels to the device yet, because they have to be transformed as below.
 
+            # self.optim.zero_grad()  # INFO: mine; TODO: check if parameter gradients
+            #  should be zeroed before forward prop or only before backprop
+
             # Forward propagation
             outputs = self.model(inputs)
 
