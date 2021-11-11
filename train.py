@@ -53,6 +53,7 @@ class Train:
 
             # Forward propagation
             # TODO: check if forward prop needs to be done with torch.set_grad_enabled()
+            # torch.set_grad_enabled(True)
             outputs = self.model(inputs)
 
             # INFO: mine; converts mask from 3-channel to class-channel

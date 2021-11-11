@@ -154,8 +154,17 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
     # ENet authors used Adam as the optimizer
+
+    # optimizer = optim.Adam(
+    #     model.parameters(),
+    #     lr=args.learning_rate,
+    #     weight_decay=args.weight_decay)  # INFO: orig
+
+    # INFO: mine
+    # Since I will freeze some layers by setting requires_grad=False of their parameters,
+    # I also need to configure the optimizer so that it doesn't compute their gradients:
     optimizer = optim.Adam(
-        model.parameters(),
+        filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.learning_rate,
         weight_decay=args.weight_decay)
 
@@ -174,19 +183,35 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # Load the pre-trained model state to the ENet model
     # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
 
-    # model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
-    #                               args.name)[0]
-    #
-    # module_list = [module for module in model.modules()]
-    #
-    # # Freeze all parameters in the last layer
-    # for parameter in module_list[-1].parameters():
-    #     parameter.requires_grad = False
-    #
-    # exit()
+    model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
+                                  args.name)[0]
+
+    # Freeze modules
+    # e.g. the whole encoder part: form 0.initial_block to 22.dilated3_7
+    # TODO: make as function
+
+    module_list = [module for module in model.children()]
+    for module in module_list[:23]:
+        module.training = False  # I'm not sure if this actually freezes the layer,
+        # so just in case, iterate over parameters and set their requires_grad to False
+        for parameter in module.parameters():
+            parameter.requires_grad = False
+
+    module_list = [module for module in model.named_children()]
+
+    # # Ensure everything is OK:
+    # counter = 0
+    # for named_module in module_list:
+    #     name = named_module[0]
+    #     is_trainable = named_module[1].training
+    #     print('{} {}'.format(name, is_trainable))
+    #     for parameter in named_module[1].parameters():
+    #         print(parameter.requires_grad)
+    #     counter += 1
+
+    # Even if parameters don't update, optimizer still calculates their gradients.
+    # So the optimizer also needs reconfiguration -- already done above.
     # INFO: mine ends
-
-
 
     # Optionally resume from a checkpoint
     if args.resume:

@@ -27,12 +27,12 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=8,
+        default=2,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
         type=int,
-        default=2,
+        default=1,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
@@ -102,7 +102,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=3,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
+        default=1,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
