@@ -32,7 +32,7 @@ def get_arguments():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=1,
+        default=2,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
@@ -61,13 +61,13 @@ def get_arguments():
     # Dataset
     parser.add_argument(
         "--dataset",
-        choices=['camvid', 'cityscapes'],
-        default='camvid',
+        choices=['camvid', 'cityscapes', 'elements'],
+        default='elements',
         help="Dataset to use. Default: camvid")
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="data/CamVid/one_image",
+        default="data/Elements",
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(
@@ -96,6 +96,7 @@ def get_arguments():
         "--with-unlabeled",
         dest='ignore_unlabeled',
         action='store_false',
+        default=False,
         help="The unlabeled class is not ignored.")
 
     # Settings
@@ -129,7 +130,7 @@ def get_arguments():
     parser.add_argument(
         "--save-dir",
         type=str,
-        default='save/ENet_CamVid',
+        default='save/ENet_Elements',
         help="The directory where models are saved. Default: save")
     parser.add_argument(
         "--save-dir-pretrained",

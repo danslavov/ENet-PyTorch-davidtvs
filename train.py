@@ -45,7 +45,7 @@ class Train:
         for step, batch_data in enumerate(self.data_loader):
             # Get the inputs and labels
             inputs = batch_data[0].to(self.device)
-            labels = batch_data[1]#.to(self.device)
+            labels = batch_data[1].to(self.device)
             # INFO: Don't pass labels to the device yet, because they have to be transformed as below.
 
             # self.optim.zero_grad()  # INFO: mine; TODO: check if parameter gradients
@@ -59,9 +59,11 @@ class Train:
             # INFO: mine; converts mask from 3-channel to class-channel
             # labels = rgb_to_class_channels(labels)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
 
-            # INFO: mine; converts labels from 3-channel to 0-channel
+            # INFO: mine
+            # Converts labels from 3-channel to 0-channel.
+            # But moves the tensors to the CPU
             labels = rgb_to_class_map(labels)
-
+            # So they need to be put back to GPU (if there is one)
             labels = labels.to(self.device)
 
             # Loss computation

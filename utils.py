@@ -9,7 +9,8 @@ import cv2
 from args import get_arguments
 from torchvision import transforms
 from PIL import Image
-from data.camvid import get_color_encoding
+from data.camvid import get_color_encoding as get_color_encoding_CamVid
+from data.elements import get_color_encoding as get_color_encoding_Elements
 
 
 color_encoding = OrderedDict([
@@ -220,7 +221,8 @@ def save_masks(img_path, class_map_numpy):  # INFO: mine
 def rgb_to_class_channels(batch, high_value=20, low_value=-20):
     """ Converts RGB ground truth mask to multichannel tensor in order to compare it with the model output. """
 
-    colors = get_color_encoding()
+    # colors = get_color_encoding_CamVid()
+    colors = get_color_encoding_Elements()
     batch_size = list(batch.size())
     class_count = len(colors)
     batch_size[1] = class_count
@@ -255,7 +257,8 @@ def rgb_to_class_map(batch):
     """ Converts RGB ground truth mask to grey-level class map (0-channel tensor)
      where each color combination becomes the corresponding class number. """
 
-    colors = get_color_encoding()
+    # colors = get_color_encoding_CamVid()
+    colors = get_color_encoding_Elements()
     class_count = len(colors)
     batch_size = list(batch.size())
     del batch_size[1]  # remove the channel dimension, as it won't be needed for loss function computation
@@ -284,7 +287,8 @@ def rgb_to_class_map(batch):
 def class_channels_to_rgb(input_batch, output_batch, label_batch):
 
     """ Converts multichannel tensor to RGB image -- i.e. model output to final mask. """
-    colors = get_color_encoding()
+    # colors = get_color_encoding_CamVid()
+    colors = get_color_encoding_Elements()
     rgb_batch_size = list(output_batch.size())
     rgb_batch_size[1] = 3  # 3 channels for RGB result
     rgb_batch = torch.zeros(rgb_batch_size)

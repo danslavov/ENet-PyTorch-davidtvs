@@ -19,6 +19,8 @@ from args import get_arguments
 from data.utils import enet_weighing, median_freq_balancing
 import utils
 
+from data import elements
+
 # Get the arguments
 args = get_arguments()
 
@@ -43,6 +45,9 @@ def load_dataset(dataset):
 
     # Get selected dataset
     # Load the training set as tensors
+    a = args.dataset_dir
+    b = image_transform
+    c = label_transform
     train_set = dataset(
         args.dataset_dir,
         transform=image_transform,
@@ -138,13 +143,41 @@ def load_dataset(dataset):
             test_loader), class_weights, class_encoding
 
 
+# INFO: mine
+def freeze(model, num_classes, start_module=0, end_module=23):
+    module_list = [module for module in model.children()]
+    # replace the last layer (12 channels) with new layer (num_classes channels) of the same type:
+    for module in module_list[start_module:end_module]:
+        module.training = False  # I'm not sure if this actually freezes the layer,
+        # so just in case, iterate over parameters and set their requires_grad to False
+        for parameter in module.parameters():
+            parameter.requires_grad = False
+
+    # # Ensure everything is OK:
+    # module_list = [module for module in model.named_children()]
+    # counter = 0
+    # for named_module in module_list:
+    #     name = named_module[0]
+    #     is_trainable = named_module[1].training
+    #     print('{} {}'.format(name, is_trainable))
+    #     for parameter in named_module[1].parameters():
+    #         print(parameter.requires_grad)
+    #     counter += 1
+
+    # Even if parameters don't update, optimizer still calculates their gradients.
+    # So the optimizer also needs reconfiguration -- already done by
+    # filter(lambda p: p.requires_grad, model.parameters()).
+    return model
+
+
 def train(train_loader, val_loader, class_weights, class_encoding):
     print("\nTraining...\n")
 
     num_classes = len(class_encoding)
 
     # Intialize ENet
-    model = ENet(num_classes).to(device)
+    # model = ENet(num_classes).to(device)
+    model = ENet(12).to(device) # TODO: num_classes is hardcoded to load pretrained model
     # Check if the network architecture is correct
     # print(model)
 
@@ -179,39 +212,26 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         ignore_index = None
     metric = IoU(num_classes, ignore_index=ignore_index)
 
-    # INFO: mine begins
+    # INFO: mine
     # Load the pre-trained model state to the ENet model
     # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
+    model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained, args.name)[0]
 
-    model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
-                                  args.name)[0]
+    # INFO: mine; change the size of final layer according to my number of classes
+    model.transposed_conv = nn.ConvTranspose2d(
+        16,
+        num_classes,
+        kernel_size=3,
+        stride=2,
+        padding=1,
+        bias=False)
+    model = model.to(device)
 
+    # INFO: mine
     # Freeze modules
-    # e.g. the whole encoder part: form 0.initial_block to 22.dilated3_7
-    # TODO: make as function
+    # Default: the whole encoder part, i.e. form 0.initial_block to 22.dilated3_7 including
+    model = freeze(model, num_classes)
 
-    module_list = [module for module in model.children()]
-    for module in module_list[:23]:
-        module.training = False  # I'm not sure if this actually freezes the layer,
-        # so just in case, iterate over parameters and set their requires_grad to False
-        for parameter in module.parameters():
-            parameter.requires_grad = False
-
-    module_list = [module for module in model.named_children()]
-
-    # # Ensure everything is OK:
-    # counter = 0
-    # for named_module in module_list:
-    #     name = named_module[0]
-    #     is_trainable = named_module[1].training
-    #     print('{} {}'.format(name, is_trainable))
-    #     for parameter in named_module[1].parameters():
-    #         print(parameter.requires_grad)
-    #     counter += 1
-
-    # Even if parameters don't update, optimizer still calculates their gradients.
-    # So the optimizer also needs reconfiguration -- already done above.
-    # INFO: mine ends
 
     # Optionally resume from a checkpoint
     if args.resume:
@@ -329,16 +349,20 @@ if __name__ == '__main__':
         args.save_dir), "The directory \"{0}\" doesn't exist.".format(
             args.save_dir)
 
-    # Import the requested dataset
-    if args.dataset.lower() == 'camvid':
-        from data import CamVid as dataset
-    elif args.dataset.lower() == 'cityscapes':
-        from data import Cityscapes as dataset
-    else:
-        # Should never happen...but just in case it does
-        raise RuntimeError("\"{0}\" is not a supported dataset.".format(
-            args.dataset))
 
+    # Import the requested dataset
+    # INFO: uncomment for orig
+    # if args.dataset.lower() == 'camvid':
+    #     from data import CamVid as dataset
+    # elif args.dataset.lower() == 'cityscapes':
+    #     from data import Cityscapes as dataset
+    # elif args.dataset.lower() == 'elements':
+    #     pass# from data import Elements as dataset
+    # else:
+    #     # Should never happen...but just in case it does
+    #     raise RuntimeError("\"{0}\" is not a supported dataset.".format(
+    #         args.dataset))
+    dataset = elements.Elements
     loaders, w_class, class_encoding = load_dataset(dataset)
     train_loader, val_loader, test_loader = loaders
 
