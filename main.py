@@ -144,9 +144,8 @@ def load_dataset(dataset):
 
 
 # INFO: mine
-def freeze(model, num_classes, start_module=0, end_module=23):
+def freeze_layers(model, start_module=0, end_module=23):
     module_list = [module for module in model.children()]
-    # replace the last layer (12 channels) with new layer (num_classes channels) of the same type:
     for module in module_list[start_module:end_module]:
         module.training = False  # I'm not sure if this actually freezes the layer,
         # so just in case, iterate over parameters and set their requires_grad to False
@@ -230,8 +229,7 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # INFO: mine
     # Freeze modules
     # Default: the whole encoder part, i.e. form 0.initial_block to 22.dilated3_7 including
-    model = freeze(model, num_classes)
-
+    model = freeze_layers(model)
 
     # Optionally resume from a checkpoint
     if args.resume:

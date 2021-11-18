@@ -46,9 +46,8 @@ class Elements(data.Dataset):
     color_encoding = OrderedDict([
         ('capacitor', (0, 0, 255)),       # 0
         ('capacitor-flat', (255, 0, 0)),  # 1
-        ('diode', (255, 255, 0)),         # 2
-        ('resistor', (0, 255, 0)),        # 4
-        ('background', (170, 170, 170)),  # 5
+        ('resistor', (255, 255, 0)),      # 2
+        ('background', (170, 170, 170)),  # 3
     ])
 
     def __init__(self,
