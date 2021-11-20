@@ -2,8 +2,8 @@ from argparse import ArgumentParser
 
 
 def get_arguments():
-    """Defines command-line arguments, and parses them.
-
+    """
+    Defines command-line arguments, and parses them.
     """
     parser = ArgumentParser()
 
@@ -14,12 +14,13 @@ def get_arguments():
         choices=['train', 'test', 'full'],
         default='train',
         help=("train: performs training and validation; test: tests the model "
-              "found in \"--save-dir\" with name \"--name\" on \"--dataset\"; "
+              "found in \"--load-dir\" with name \"--name\" on \"--dataset\"; "
               "full: combines train and test modes. Default: train"))
     parser.add_argument(
         "--resume",
         action='store_true',
-        help=("The model found in \"--save-dir/--name/\" and filename "
+        default=True,
+        help=("The model found in \"--load-dir/--name/\" and filename "
               "\"--name.h5\" is loaded."))
 
     # Hyperparameters
@@ -27,18 +28,18 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=2,
+        default=10,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
         type=int,
-        default=2,
+        default=9999,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
         "-lr",
         type=float,
-        default=5e-4,
+        default=0.01,
         help="The learning rate. Default: 5e-4")
     parser.add_argument(
         "--lr-decay",
@@ -67,7 +68,7 @@ def get_arguments():
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="data/Elements",
+        default="D:/dataset",
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(
@@ -79,12 +80,12 @@ def get_arguments():
     parser.add_argument(
         "--height",
         type=int,
-        default=360,
+        default=350,
         help="The image height. Default: 360")
     parser.add_argument(
         "--width",
         type=int,
-        default=480,
+        default=350,
         help="The image width. Default: 480")
     parser.add_argument(
         "--weighing",
@@ -103,17 +104,18 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=1,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
+        default=3,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
         action='store_true',
+        # default=True,
         help="Print loss every step")
     parser.add_argument(
         "--imshow-batch",
         action='store_true',
-        # default='True',
-        # INFO: When imshow-batch is True, it tries to performs label_to_rgb transform, but gives exception
+        # default=True,
+        # INFO: When imshow-batch is True, it tries to perform label_to_rgb transform, but gives exception
         help=("Displays batch images when loading the dataset and making "
               "predictions."))
     parser.add_argument(
@@ -131,11 +133,18 @@ def get_arguments():
         "--save-dir",
         type=str,
         default='save/ENet_Elements',
-        help="The directory where models are saved. Default: save")
+        help="The directory where models are saved. Default: save/ENet_Elements")
     parser.add_argument(
-        "--save-dir-pretrained",
+        "--load-dir-pretrained",
         type=str,
-        default='save/pretrained/ENet_CamVid',
-        help="The directory where the pre-trained models are saved. Downloaded from: https://github.com/davidtvs/PyTorch-ENet/tree/master/save/ENet_CamVid . Default: save/pretrained/ENet_CamVid")
+        default='load/pretrained/ENet_CamVid',
+        help="The directory where the pre-trained models are loaded from."
+             "Downloaded from: https://github.com/davidtvs/PyTorch-ENet/tree/master/save/ENet_CamVid."
+             "Default: load/pretrained/ENet_CamVid")
+    parser.add_argument(
+        "--load-dir",
+        type=str,
+        default='load/best-so-far/ENet_Elements',
+        help="The directory where models are loaded from. Default: load/best-so-far/ENet_Elements")
 
     return parser.parse_args()

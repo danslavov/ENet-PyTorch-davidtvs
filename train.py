@@ -1,7 +1,10 @@
+import time
+
 import numpy as np
 import torch
 import skimage.io as io
 
+import utils
 from utils import rgb_to_class_channels, rgb_to_class_map
 
 
@@ -39,22 +42,28 @@ class Train:
         - The epoch loss (float).
 
         """
-        self.model.train()
+        # INFO: mine
+        # train() and freeze_layers() are called once in the beginning of training
+        # and then again after validation -- to reduce the number of calls.
+        # self.model.train()
+        # self.model = utils.freeze_layers(self.model)
+
         epoch_loss = 0.0
         self.metric.reset()
         for step, batch_data in enumerate(self.data_loader):
+
+            # batch_start = time.time()
+
             # Get the inputs and labels
             inputs = batch_data[0].to(self.device)
             labels = batch_data[1].to(self.device)
             # INFO: Don't pass labels to the device yet, because they have to be transformed as below.
 
-            # self.optim.zero_grad()  # INFO: mine; TODO: check if parameter gradients
-            #  should be zeroed before forward prop or only before backprop
-
+            # start = time.time()
             # Forward propagation
-            # TODO: check if forward prop needs to be done with torch.set_grad_enabled()
-            # torch.set_grad_enabled(True)
             outputs = self.model(inputs)
+            # duration = time.time() - start
+            # print('Time for forward propagation: {}'.format(duration))
 
             # INFO: mine; converts mask from 3-channel to class-channel
             # labels = rgb_to_class_channels(labels)  # shape: Tensor 1, 12, 360, 480; range: -20 to 20
@@ -69,10 +78,13 @@ class Train:
             # Loss computation
             loss = self.criterion(outputs, labels)
 
+            # start = time.time()
             # Backpropagation
             self.optim.zero_grad()
             loss.backward()
             self.optim.step()
+            # duration = time.time() - start
+            # print('Time for backpropagation: {}'.format(duration))
 
             # Keep track of loss for current epoch
             epoch_loss += loss.item()
@@ -80,7 +92,11 @@ class Train:
             # Keep track of the evaluation metric
             self.metric.add(outputs.detach(), labels.detach())
 
+            # batch_end = time.time()
+
             if iteration_loss:
-                print("[Step: %d] Iteration loss: %.4f" % (step, loss.item()))
+                print("[Batch: %d] Iteration loss: %.4f" % (step, loss.item()))
+
+            # print(batch_end - batch_start)
 
         return epoch_loss / len(self.data_loader), self.metric.value()

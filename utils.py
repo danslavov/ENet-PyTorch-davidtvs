@@ -170,6 +170,8 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
     epoch = checkpoint['epoch']
     miou = checkpoint['miou']
 
+    print('MODEL STATE LOADED FROM ' + model_path)  # TODO: delete
+
     return model, optimizer, epoch, miou
 
 
@@ -327,6 +329,31 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
         counter += 1
 
     return rgb_batch
+
+
+# INFO: mine
+# Freeze some modules.
+# Default: the whole encoder part, i.e. form 0.initial_block to 22.dilated3_7 including
+def freeze_layers(model, start_module=0, end_module=23):
+    module_list = [module for module in model.children()]
+    for module in module_list[start_module:end_module]:
+        module.training = False  # I'm not sure if this actually freezes the layer,
+        # so just in case, iterate over parameters and set their requires_grad to False
+        for parameter in module.parameters():
+            parameter.requires_grad = False
+
+    # # Ensure everything is OK:
+    # module_list = [module for module in model.named_children()]
+    # counter = 0
+    # for named_module in module_list:
+    #     name = named_module[0]
+    #     is_trainable = named_module[1].training
+    #     print('{} {}'.format(name, is_trainable))
+    #     for parameter in named_module[1].parameters():
+    #         print(parameter.requires_grad)
+    #     counter += 1
+
+    return model
 
 
 

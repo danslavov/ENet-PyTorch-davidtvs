@@ -45,9 +45,6 @@ def load_dataset(dataset):
 
     # Get selected dataset
     # Load the training set as tensors
-    a = args.dataset_dir
-    b = image_transform
-    c = label_transform
     train_set = dataset(
         args.dataset_dir,
         transform=image_transform,
@@ -98,6 +95,11 @@ def load_dataset(dataset):
     print("Train dataset size:", len(train_set))
     print("Validation dataset size:", len(val_set))
 
+    # INFO: start logging
+    log_file = open('save/ENet_Elements/log.txt', 'a')
+    log_file.write('Number of classes: {}\nTraining dataset size: {}\nValidation dataset size: {}\n'
+                   .format(num_classes, len(train_set), len(val_set)))
+
     # Get a batch of samples to display
     if args.mode.lower() == 'test':
         images, labels = iter(test_loader).next()
@@ -106,6 +108,9 @@ def load_dataset(dataset):
     print("Image size:", images.size())
     print("Label size:", labels.size())
     print("Class-color encoding:", class_encoding)
+
+    log_file.write('Image size: {}, label size: {}\nClass-color encoding:\n{}\n'
+                   .format(images.size(), labels.size(), class_encoding))
 
     # Show a batch of samples and labels
     if args.imshow_batch:
@@ -120,6 +125,9 @@ def load_dataset(dataset):
     # Get class weights from the selected weighing technique
     class_weights = 0
     print("\nWeighing technique:", args.weighing)
+
+    log_file.write('Weighing technique: {}\n'.format(args.weighing))
+
     if args.weighing.lower() == 'none':
         class_weights = None
     else:
@@ -139,44 +147,30 @@ def load_dataset(dataset):
 
     print("Class weights:", class_weights)
 
+    log_file.write('Class weights:\n{}\n'.format(class_weights))
+
+    log_file.close()
+
     return (train_loader, val_loader,
             test_loader), class_weights, class_encoding
 
 
-# INFO: mine
-def freeze_layers(model, start_module=0, end_module=23):
-    module_list = [module for module in model.children()]
-    for module in module_list[start_module:end_module]:
-        module.training = False  # I'm not sure if this actually freezes the layer,
-        # so just in case, iterate over parameters and set their requires_grad to False
-        for parameter in module.parameters():
-            parameter.requires_grad = False
-
-    # # Ensure everything is OK:
-    # module_list = [module for module in model.named_children()]
-    # counter = 0
-    # for named_module in module_list:
-    #     name = named_module[0]
-    #     is_trainable = named_module[1].training
-    #     print('{} {}'.format(name, is_trainable))
-    #     for parameter in named_module[1].parameters():
-    #         print(parameter.requires_grad)
-    #     counter += 1
-
-    # Even if parameters don't update, optimizer still calculates their gradients.
-    # So the optimizer also needs reconfiguration -- already done by
-    # filter(lambda p: p.requires_grad, model.parameters()).
-    return model
-
-
 def train(train_loader, val_loader, class_weights, class_encoding):
+
+    # train_init_start = time.time()
+
     print("\nTraining...\n")
 
     num_classes = len(class_encoding)
 
     # Intialize ENet
     # model = ENet(num_classes).to(device)
-    model = ENet(12).to(device) # TODO: num_classes is hardcoded to load pretrained model
+
+    # INFO: mine
+    # If a pretrained model on CamVid is needed (for transfer learning),
+    # it should be initialized with 12 classes:
+    model = ENet(12).to(device)
+
     # Check if the network architecture is correct
     # print(model)
 
@@ -194,7 +188,8 @@ def train(train_loader, val_loader, class_weights, class_encoding):
 
     # INFO: mine
     # Since I will freeze some layers by setting requires_grad=False of their parameters,
-    # I also need to configure the optimizer so that it doesn't compute their gradients:
+    # I also need to configure the optimizer so that it doesn't compute their gradients.
+    # Otherwise, it will still calculate them, despite they are not used in the training.
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.learning_rate,
@@ -214,9 +209,11 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # INFO: mine
     # Load the pre-trained model state to the ENet model
     # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
-    model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained, args.name)[0]
+    # model = utils.load_checkpoint(model, optimizer, args.load_dir_pretrained, args.name)[0]
 
-    # INFO: mine; change the size of final layer according to my number of classes
+    # INFO: mine
+    # If model is pretrained on CamVid, the size of the final layer should be changed
+    # according to the current number of classes
     model.transposed_conv = nn.ConvTranspose2d(
         16,
         num_classes,
@@ -226,17 +223,19 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         bias=False)
     model = model.to(device)
 
-    # INFO: mine
-    # Freeze modules
-    # Default: the whole encoder part, i.e. form 0.initial_block to 22.dilated3_7 including
-    model = freeze_layers(model)
+    # INFO: Continue writing into the log file
+    log_file = open('save/ENet_Elements/log.txt', 'a')
 
     # Optionally resume from a checkpoint
     if args.resume:
         model, optimizer, start_epoch, best_miou = utils.load_checkpoint(
-            model, optimizer, args.save_dir, args.name)
+            model, optimizer, args.load_dir, args.name)
         print("Resuming from model: Start epoch = {0} "
               "| Best mean IoU = {1:.4f}".format(start_epoch, best_miou))
+
+        log_file.write('Resuming from model: Start epoch = {0} | Best mean IoU = {1:.4f}\n'
+                       .format(start_epoch, best_miou))
+
     else:
         start_epoch = 0
         best_miou = 0
@@ -245,27 +244,59 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     print()
     train = Train(model, train_loader, optimizer, criterion, metric, device)
     val = Test(model, val_loader, criterion, metric, device)
+
+    # train_init_end = time.time()
+    # print('Train initialization time: {}'.format(train_init_end - train_init_start))
+
+    # INFO: mine
+    # To avoid calling train() followed by freeze_layers() in the beginning of each epoch,
+    # call them here and then after each validation.
+    model.train()
+    model = utils.freeze_layers(model)
+
     for epoch in range(start_epoch, args.epochs):
         print(">>>> [Epoch: {0:d}] Training".format(epoch))
 
+        epoch_start = time.time()
         epoch_loss, (iou, miou) = train.run_epoch(args.print_step)
         lr_updater.step()
+        epoch_end = time.time()
+        epoch_time = epoch_end - epoch_start
 
-        print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f}".
-              format(epoch, epoch_loss, miou))
+        print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
+              format(epoch, epoch_loss, miou, epoch_time))
 
-        if (epoch + 1) % 10 == 0 or epoch + 1 == args.epochs:
+        log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
+                       .format(epoch, epoch_loss, miou, epoch_time))
+
+        # INFO: Validate each 4 epochs; orig: each 10 epochs
+        if (epoch + 1) % 4 == 0 or epoch + 1 == args.epochs:
             print(">>>> [Epoch: {0:d}] Validation".format(epoch))
 
+            val_start = time.time()
             loss, (iou, miou) = val.run_epoch(args.print_step)
 
-            print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f}".
-                  format(epoch, loss, miou))
+            # INFO: mine
+            # Because val.run_epoch() calls model.eval(), it needs to be set back to train()
+            # but followed by freezing.
+            model.train()
+            model = utils.freeze_layers(model)
 
-            # Print per class IoU on last epoch or if best iou
-            if epoch + 1 == args.epochs or miou > best_miou:
-                for key, class_iou in zip(class_encoding.keys(), iou):
-                    print("{0}: {1:.4f}".format(key, class_iou))
+            val_end = time.time()
+            val_duration = val_end - val_start
+
+            print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
+                  format(epoch, loss, miou, val_duration))
+
+            log_file.write('VALIDATION Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
+                           .format(epoch, loss, miou, val_duration))
+
+            # Print per class IoU on last epoch or if best iou -- INFO: mine; print per class IoU unconditionally
+            # if epoch + 1 == args.epochs or miou > best_miou:
+            for key, class_iou in zip(class_encoding.keys(), iou):
+                print("{0}: {1:.4f}".format(key, class_iou))
+                log_file.write('{0}: {1:.4f}; '.format(key, class_iou))
+            log_file.write('\n')
 
             # Save the model if it's the best thus far
             if miou > best_miou:
@@ -273,6 +304,10 @@ def train(train_loader, val_loader, class_weights, class_encoding):
                 best_miou = miou
                 utils.save_checkpoint(model, optimizer, epoch + 1, best_miou,
                                       args)
+
+                log_file.write('Best model thus far, saving.\n')
+
+    log_file.close()
 
     return model
 
@@ -337,6 +372,9 @@ def predict(model, images, class_encoding):
 
 # Run only if this module is being run directly
 if __name__ == '__main__':
+
+    # program_init_start = time.time()
+
     # Fail fast if the dataset directory doesn't exist
     assert os.path.isdir(
         args.dataset_dir), "The directory \"{0}\" doesn't exist.".format(
@@ -367,16 +405,11 @@ if __name__ == '__main__':
     # INFO: mine. Empty GPU cache
     torch.cuda.empty_cache()
 
+    # program_init_stop = time.time()
+    # print('Program init time: {}'. format(program_init_stop - program_init_start))
+
     if args.mode.lower() in {'train', 'full'}:
-        start = time.time()
         model = train(train_loader, val_loader, w_class, class_encoding)
-        end = time.time()
-        image_count = len(train_loader.dataset.train_data)
-        duration = end - start
-        duration_per_epoch = duration / args.epochs
-        duration_per_image = duration / image_count
-        print('workers * batch: {}\ntime per epoch: {} s\ntime per image: {} s\ntotal time: {} s'
-              .format(args.batch_size * args.workers, duration_per_epoch, duration_per_image, duration))
 
     if args.mode.lower() in {'test', 'full'}:
         if args.mode.lower() == 'test':
@@ -390,7 +423,7 @@ if __name__ == '__main__':
 
         # Load the pre-trained model state to the ENet model
         # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
-        model = utils.load_checkpoint(model, optimizer, args.save_dir_pretrained,
+        model = utils.load_checkpoint(model, optimizer, args.load_dir_pretrained,
                                       args.name)[0]
 
         # if args.mode.lower() == 'test':
