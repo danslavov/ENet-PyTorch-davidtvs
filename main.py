@@ -95,11 +95,6 @@ def load_dataset(dataset):
     print("Train dataset size:", len(train_set))
     print("Validation dataset size:", len(val_set))
 
-    # INFO: start logging
-    log_file = open('save/ENet_Elements/log.txt', 'a')
-    log_file.write('Number of classes: {}\nTraining dataset size: {}\nValidation dataset size: {}\n'
-                   .format(num_classes, len(train_set), len(val_set)))
-
     # Get a batch of samples to display
     if args.mode.lower() == 'test':
         images, labels = iter(test_loader).next()
@@ -108,9 +103,6 @@ def load_dataset(dataset):
     print("Image size:", images.size())
     print("Label size:", labels.size())
     print("Class-color encoding:", class_encoding)
-
-    log_file.write('Image size: {}, label size: {}\nClass-color encoding:\n{}\n'
-                   .format(images.size(), labels.size(), class_encoding))
 
     # Show a batch of samples and labels
     if args.imshow_batch:
@@ -125,8 +117,6 @@ def load_dataset(dataset):
     # Get class weights from the selected weighing technique
     class_weights = 0
     print("\nWeighing technique:", args.weighing)
-
-    log_file.write('Weighing technique: {}\n'.format(args.weighing))
 
     if args.weighing.lower() == 'none':
         class_weights = None
@@ -147,9 +137,13 @@ def load_dataset(dataset):
 
     print("Class weights:", class_weights)
 
-    log_file.write('Class weights:\n{}\n'.format(class_weights))
-
-    log_file.close()
+    with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
+        log_file.write('Number of classes: {}\nTraining dataset size: {}\nValidation dataset size: {}\n'
+                       .format(num_classes, len(train_set), len(val_set)))
+        log_file.write('Image size: {}, label size: {}\nClass-color encoding:\n{}\n'
+                       .format(images.size(), labels.size(), class_encoding))
+        log_file.write('Weighing technique: {}\n'.format(args.weighing))
+        log_file.write('Class weights:\n{}\n'.format(class_weights))
 
     return (train_loader, val_loader,
             test_loader), class_weights, class_encoding
@@ -223,9 +217,6 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         bias=False)
     model = model.to(device)
 
-    # INFO: Continue writing into the log file
-    log_file = open('save/ENet_Elements/log.txt', 'a')
-
     # Optionally resume from a checkpoint
     if args.resume:
         model, optimizer, start_epoch, best_miou = utils.load_checkpoint(
@@ -233,8 +224,9 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         print("Resuming from model: Start epoch = {0} "
               "| Best mean IoU = {1:.4f}".format(start_epoch, best_miou))
 
-        log_file.write('Resuming from model: Start epoch = {0} | Best mean IoU = {1:.4f}\n'
-                       .format(start_epoch, best_miou))
+        with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
+            log_file.write('Resuming from model: Start epoch = {0} | Best mean IoU = {1:.4f}\n'
+                           .format(start_epoch, best_miou))
 
     else:
         start_epoch = 0
@@ -266,8 +258,9 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
               format(epoch, epoch_loss, miou, epoch_time))
 
-        log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
-                       .format(epoch, epoch_loss, miou, epoch_time))
+        with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
+            log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
+                           .format(epoch, epoch_loss, miou, epoch_time))
 
         # INFO: Validate each 4 epochs; orig: each 10 epochs
         if (epoch + 1) % 4 == 0 or epoch + 1 == args.epochs:
@@ -288,26 +281,25 @@ def train(train_loader, val_loader, class_weights, class_encoding):
             print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
                   format(epoch, loss, miou, val_duration))
 
-            log_file.write('VALIDATION Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
-                           .format(epoch, loss, miou, val_duration))
+            with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
+                log_file.write('VALIDATION Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
+                               .format(epoch, loss, miou, val_duration))
 
-            # Print per class IoU on last epoch or if best iou -- INFO: mine; print per class IoU unconditionally
-            # if epoch + 1 == args.epochs or miou > best_miou:
-            for key, class_iou in zip(class_encoding.keys(), iou):
-                print("{0}: {1:.4f}".format(key, class_iou))
-                log_file.write('{0}: {1:.4f}; '.format(key, class_iou))
-            log_file.write('\n')
+                # Print per class IoU on last epoch or if best iou -- INFO: mine; print per class IoU unconditionally
+                # if epoch + 1 == args.epochs or miou > best_miou:
+                for key, class_iou in zip(class_encoding.keys(), iou):
+                    print("{0}: {1:.4f}".format(key, class_iou))
+                    log_file.write('{0}: {1:.4f}; '.format(key, class_iou))
+                log_file.write('\n')
 
             # Save the model if it's the best thus far
-            if miou > best_miou:
-                print("\nBest model thus far. Saving...\n")
-                best_miou = miou
-                utils.save_checkpoint(model, optimizer, epoch + 1, best_miou,
-                                      args)
+                if miou > best_miou:
+                    print("\nBest model thus far. Saving...\n")
+                    best_miou = miou
+                    utils.save_checkpoint(model, optimizer, epoch + 1, best_miou,
+                                          args)
 
-                log_file.write('Best model thus far, saving.\n')
-
-    log_file.close()
+                    log_file.write('S A V E\n')
 
     return model
 

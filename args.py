@@ -28,12 +28,12 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=10,
+        default=50,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
         type=int,
-        default=9999,
+        default=999999,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
@@ -68,7 +68,7 @@ def get_arguments():
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="D:/dataset",
+        default="D:/dataset-tmp",
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(
