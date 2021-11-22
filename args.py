@@ -28,18 +28,18 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=50,
+        default=32,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
         type=int,
-        default=999999,
+        default=9999,
         help="Number of training epochs. Default: 300")
     parser.add_argument(
         "--learning-rate",
         "-lr",
         type=float,
-        default=0.01,
+        default=0.005,
         help="The learning rate. Default: 5e-4")
     parser.add_argument(
         "--lr-decay",
@@ -68,7 +68,8 @@ def get_arguments():
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="D:/dataset-tmp",
+        default="data/Elements",
+        # default="data/tmp",  # to check single output as RGB image
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
     parser.add_argument(
@@ -104,7 +105,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=3,  # workers = 2, batc_size = 9; workers = 3, batc_size = 8; workers = 4, batc_size = 5
+        default=3,
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",

@@ -166,13 +166,14 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
     checkpoint = torch.load(model_path)  # INFO: orig -- to load on GPU
     # checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # INFO: to load on CPU
     model.load_state_dict(checkpoint['state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
+    # optimizer.load_state_dict(checkpoint['optimizer'])  # TODO: uncomment if need to load optimizer state
     epoch = checkpoint['epoch']
     miou = checkpoint['miou']
 
     print('MODEL STATE LOADED FROM ' + model_path)  # TODO: delete
 
-    return model, optimizer, epoch, miou
+    # return model, optimizer, epoch, miou
+    return model, None, epoch, miou
 
 
 def relabel(img):
@@ -312,7 +313,10 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
             color = list(colors.items())[class_number][1]
             [r, g, b] = color
             class_map_color[class_map_ndarray == class_number] = [b, g, r]
-        cv2.imwrite('data/CamVid/results/color/{}.png'.format(counter), class_map_color)
+        cv2.imwrite('data/tmp/result/{}.png'.format(counter), class_map_color)
+
+        print('Called exit() in file utils.py, function class_channels_to_rgb(), line 319.')
+        exit()
 
         # save ground-truth mask overlayed with output mask
         # label_image = label_tensor.byte().cpu().data.numpy()
@@ -334,26 +338,30 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
 # INFO: mine
 # Freeze some modules.
 # Default: the whole encoder part, i.e. form 0.initial_block to 22.dilated3_7 including
-def freeze_layers(model, start_module=0, end_module=23):
-    module_list = [module for module in model.children()]
-    for module in module_list[start_module:end_module]:
-        module.training = False  # I'm not sure if this actually freezes the layer,
-        # so just in case, iterate over parameters and set their requires_grad to False
+def freeze_encoder(model, start_module=0, end_module=23):
+    module_list = [module for module in model.children()][start_module:end_module]
+    for module in module_list:
+        freeze_parameters_recursively(module)
+
+
+def freeze_parameters_recursively(module):
+    # freeze all parameters of current module
+    for parameter in module.parameters():
+        parameter.requires_grad = False
+    # call the same function on current module's children
+    for submodule in module.children():
+        freeze_parameters_recursively(submodule)
+
+
+def print_trainable_state(model):
+    module_list = [module for module in model.named_children()]
+    for name, module in module_list:
+        print(name)
         for parameter in module.parameters():
-            parameter.requires_grad = False
+            print(parameter.requires_grad)
+        print_trainable_state(module)
 
-    # # Ensure everything is OK:
-    # module_list = [module for module in model.named_children()]
-    # counter = 0
-    # for named_module in module_list:
-    #     name = named_module[0]
-    #     is_trainable = named_module[1].training
-    #     print('{} {}'.format(name, is_trainable))
-    #     for parameter in named_module[1].parameters():
-    #         print(parameter.requires_grad)
-    #     counter += 1
 
-    return model
 
 
 
