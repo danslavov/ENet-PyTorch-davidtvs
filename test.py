@@ -64,7 +64,7 @@ class Test:
                 # INFO: mine
                 # This converts outputs from class-channel to 3-channel.
                 # Also can save resulting images (plain masks and overlayed masks)
-                rgb_outputs = class_channels_to_rgb(inputs, outputs, labels)
+                # rgb_outputs = class_channels_to_rgb(inputs, outputs, labels)
 
                 # Loss computation
                 loss = self.criterion(outputs, labels)

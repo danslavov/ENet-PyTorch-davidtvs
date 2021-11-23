@@ -158,19 +158,36 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     num_classes = len(class_encoding)
 
     # Intialize ENet
-    model = ENet(num_classes).to(device)
+    # model = ENet(num_classes).to(device)
 
     # INFO: mine
     # Freeze layers for the first time here, before initializing the optimizer.
-    utils.freeze_encoder(model)
+    # utils.freeze_encoder(model)
 
     # INFO: mine
     # If a pretrained model on CamVid is needed (for transfer learning),
     # it should be initialized with 12 classes:
-    # model = ENet(12).to(device)
+    model = ENet(12).to(device)
 
     # Check if the network architecture is correct
     # print(model)
+
+    # INFO: mine
+    # Load the pre-trained model state to the ENet model
+    # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
+    model = utils.load_checkpoint(model, args.load_dir_pretrained, args.name)[0]
+
+    # INFO: mine
+    # If model is pretrained on CamVid, the size of the final layer should be changed
+    # according to the current number of classes
+    model.transposed_conv = nn.ConvTranspose2d(
+        16,
+        num_classes,
+        kernel_size=3,
+        stride=2,
+        padding=1,
+        bias=False)
+    model = model.to(device)
 
     # We are going to use the CrossEntropyLoss loss function as it's most
     # frequently used in classification problems with multiple classes which
@@ -203,23 +220,6 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     else:
         ignore_index = None
     metric = IoU(num_classes, ignore_index=ignore_index)
-
-    # INFO: mine
-    # Load the pre-trained model state to the ENet model
-    # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
-    # model = utils.load_checkpoint(model, optimizer, args.load_dir_pretrained, args.name)[0]
-
-    # INFO: mine
-    # If model is pretrained on CamVid, the size of the final layer should be changed
-    # according to the current number of classes
-    # model.transposed_conv = nn.ConvTranspose2d(
-    #     16,
-    #     num_classes,
-    #     kernel_size=3,
-    #     stride=2,
-    #     padding=1,
-    #     bias=False)
-    # model = model.to(device)
 
     # Optionally resume from a checkpoint
     if args.resume:
@@ -279,15 +279,14 @@ def train(train_loader, val_loader, class_weights, class_encoding):
 
             val_start = time.time()
             loss, (iou, miou) = val.run_epoch(args.print_step)
+            val_end = time.time()
+            val_duration = val_end - val_start
 
             # INFO: mine
             # Because val.run_epoch() calls model.eval(), it needs to be set back to train()
             # but followed by freezing.
             model.train()
             utils.freeze_encoder(model)
-
-            val_end = time.time()
-            val_duration = val_end - val_start
 
             print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
                   format(epoch, loss, miou, val_duration))
@@ -306,7 +305,6 @@ def train(train_loader, val_loader, class_weights, class_encoding):
             # Save the model if it's the best thus far
                 if miou > best_miou:
                     print("\nBest model thus far. Saving...\n")
-                    exit() # TODO: remove
                     best_miou = miou
                     utils.save_checkpoint(model, optimizer, epoch + 1, best_miou,
                                           args)

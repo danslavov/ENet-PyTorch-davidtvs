@@ -13,44 +13,14 @@ from data.camvid import get_color_encoding as get_color_encoding_CamVid
 from data.elements import get_color_encoding as get_color_encoding_Elements
 
 
-color_encoding = OrderedDict([
-        ('sky', (128, 128, 128)),
-        ('building', (128, 0, 0)),
-        ('pole', (192, 192, 128)),
-        # ('road_marking', (255, 69, 0)),  #  remove the road_marking class from the CamVid dataset as it's merged with the road class
-        ('road', (128, 64, 128)),
-        ('pavement', (60, 40, 222)),
-        ('tree', (128, 128, 0)),
-        ('sign_symbol', (192, 128, 128)),
-        ('fence', (64, 64, 128)),
-        ('car', (64, 0, 128)),
-        ('pedestrian', (64, 64, 0)),
-        ('bicyclist', (0, 128, 192)),
-        ('unlabeled', (0, 0, 0))
-    ])
+args = get_arguments()
 
-# Color encoding for Cityscapes.
-# This is the same as the ordered dict color_encoding in cityscapes.py, so TODO: reuse it.
-palette = [[128, 64, 128],
-           [244, 35, 232],
-           [70, 70, 70],
-           [102, 102, 156],
-           [190, 153, 153],
-           [153, 153, 153],
-           [250, 170, 30],
-           [220, 220, 0],
-           [107, 142, 35],
-           [152, 251, 152],
-           [70, 130, 180],
-           [220, 20, 60],
-           [255, 0, 0],
-           [0, 0, 142],
-           [0, 0, 70],
-           [0, 60, 100],
-           [0, 80, 100],
-           [0, 0, 230],
-           [119, 11, 32],
-           [0, 0, 0]]
+# Make list of color_encoding values (to form a palette)
+if args.dataset == 'camvid':
+    color_encoding = get_color_encoding_CamVid()
+elif args.dataset == 'elements':
+    color_encoding = get_color_encoding_Elements()
+colors = list(color_encoding.values())
 
 
 def batch_transform(batch, transform):
@@ -137,7 +107,8 @@ def save_checkpoint(model, optimizer, epoch, miou, args):
         summary_file.write("Mean IoU: {0}\n". format(miou))
 
 
-def load_checkpoint(model, optimizer, folder_dir, filename):
+# INFO: If an optimizer saved state is needed, pass optimizer's structure through the signature
+def load_checkpoint(model, folder_dir, filename):
     """Loads the model from a specified directory with a specified name.
 
     Keyword arguments:
@@ -166,52 +137,64 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
     checkpoint = torch.load(model_path)  # INFO: orig -- to load on GPU
     # checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # INFO: to load on CPU
     model.load_state_dict(checkpoint['state_dict'])
-    # optimizer.load_state_dict(checkpoint['optimizer'])  # TODO: uncomment if need to load optimizer state
+
+    # INFO: uncomment if need to load optimizer state.
+    # Also, an optimizer structure should be passed by the function signature.
+    # optimizer.load_state_dict(checkpoint['optimizer'])
+
     epoch = checkpoint['epoch']
     miou = checkpoint['miou']
-
-    print('MODEL STATE LOADED FROM ' + model_path)  # TODO: delete
 
     # return model, optimizer, epoch, miou
     return model, None, epoch, miou
 
 
 def relabel(img):
-    '''
-    This function relabels the predicted labels so that cityscape dataset can process
-    :param img:
-    :return:
-    '''
-    img[img == 11] = 240
-    img[img == 10] = 220
-    img[img == 9] = 200
-    img[img == 8] = 180
-    img[img == 7] = 160
-    img[img == 6] = 140
-    img[img == 5] = 120
-    img[img == 4] = 100
-    img[img == 3] = 80
-    img[img == 2] = 60
-    img[img == 1] = 40
-    img[img == 0] = 20
-    img[img == 255] = 0
+    if args.dataset == 'camvid':
+        img[img == 11] = 240
+        img[img == 10] = 220
+        img[img == 9] = 200
+        img[img == 8] = 180
+        img[img == 7] = 160
+        img[img == 6] = 140
+        img[img == 5] = 120
+        img[img == 4] = 100
+        img[img == 3] = 80
+        img[img == 2] = 60
+        img[img == 1] = 40
+        img[img == 0] = 20
+        img[img == 255] = 0
+    elif args.dataset == 'elements':
+    # TODO: chech pixel values of the model output
+    # and adjust relabel accordingly.
+        img[img == 11] = 240
+        img[img == 10] = 220
+        img[img == 9] = 200
+        img[img == 8] = 180
+        img[img == 7] = 160
+        img[img == 6] = 140
+        img[img == 5] = 120
+        img[img == 4] = 100
+        img[img == 3] = 80
+        img[img == 2] = 60
+        img[img == 1] = 40
+        img[img == 0] = 20
+        img[img == 255] = 0
+
     return img
 
 
 def save_masks(img_path, class_map_numpy):  # INFO: mine
 
-    # Get the arguments
-    args = get_arguments()
-
     # extract image name and extension from image path
-    img_name_and_extension = img_path.split('\\')[-1]
+    img_name_and_extension = img_path.split(os.path.sep)[-1]
 
     # create class maps (i.e. masks): more distinguishable greyscale and color (3 channels R, G, B)
     class_map_numpy_grey = relabel(class_map_numpy.astype(np.uint8))  # from almost black to more distinguishable
     class_map_numpy_color = np.zeros((args.height, args.width, 3),
                                      dtype=np.uint8)  # from greyscale (1 channel) to color (3 channels)
     for idx in range(args.num_classes):
-        [r, g, b] = palette[idx]
+        [r, g, b] = colors[idx]
         class_map_numpy_color[class_map_numpy == idx] = [b, g, r]
 
     # save masks
@@ -315,9 +298,6 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
             class_map_color[class_map_ndarray == class_number] = [b, g, r]
         cv2.imwrite('data/tmp/result/{}.png'.format(counter), class_map_color)
 
-        print('Called exit() in file utils.py, function class_channels_to_rgb(), line 319.')
-        exit()
-
         # save ground-truth mask overlayed with output mask
         # label_image = label_tensor.byte().cpu().data.numpy()
         # label_image = np.moveaxis(label_image, 0, -1)
@@ -331,6 +311,9 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
         rgb_batch[counter] = torch.from_numpy(class_map_color)
 
         counter += 1
+
+    print('exit() called in file utils.py, line 311')
+    exit()
 
     return rgb_batch
 

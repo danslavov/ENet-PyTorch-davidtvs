@@ -19,7 +19,7 @@ def get_arguments():
     parser.add_argument(
         "--resume",
         action='store_true',
-        default=True,
+        default=False,
         help=("The model found in \"--load-dir/--name/\" and filename "
               "\"--name.h5\" is loaded."))
 
@@ -28,7 +28,7 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=32,
+        default=64,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",
@@ -105,12 +105,12 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=3,
+        default=2,
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",
         action='store_true',
-        # default=True,
+        default=True,
         help="Print loss every step")
     parser.add_argument(
         "--imshow-batch",
@@ -145,7 +145,7 @@ def get_arguments():
     parser.add_argument(
         "--load-dir",
         type=str,
-        default='load/best-so-far/ENet_Elements',
+        default='load/new_training',
         help="The directory where models are loaded from. Default: load/best-so-far/ENet_Elements")
 
     return parser.parse_args()
