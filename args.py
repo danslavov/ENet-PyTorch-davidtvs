@@ -28,7 +28,7 @@ def get_arguments():
         "--batch-size",
         "-b",
         type=int,
-        default=64,
+        default=52,
         help="The batch size. Default: 10")
     parser.add_argument(
         "--epochs",

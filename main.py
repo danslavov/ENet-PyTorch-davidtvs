@@ -256,6 +256,8 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     model.train()
     utils.freeze_encoder(model)
 
+    nonimprovement = 0  # INFO: mine. How many validations didn't show improvement.
+
     for epoch in range(start_epoch, args.epochs):
         print(">>>> [Epoch: {0:d}] Training".format(epoch))
 
@@ -310,6 +312,15 @@ def train(train_loader, val_loader, class_weights, class_encoding):
                                           args)
 
                     log_file.write('S A V E\n')
+                else:
+                    nonimprovement += 1
+
+            # INFO: When 2 validations don't show improvement, stop training to avoid overfit.
+            # (Despite model is not saved, it could show improvement later and be saved
+            # when would have probably already become overfitted.
+            if nonimprovement > 1:
+                print('Training stopped due to lack of improvement!')
+                exit()
 
     return model
 
