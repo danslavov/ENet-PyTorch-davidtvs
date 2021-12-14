@@ -146,9 +146,10 @@ def load_checkpoint(model, folder_dir, filename):
     miou = checkpoint['miou']
 
     # return model, optimizer, epoch, miou
-    return model, None, epoch, miou
+    return model, epoch, miou
 
 
+# Only for visualization -- more distinguishable greyscale images
 def relabel(img):
     if args.dataset == 'camvid':
         img[img == 11] = 240
@@ -165,21 +166,10 @@ def relabel(img):
         img[img == 0] = 20
         img[img == 255] = 0
     elif args.dataset == 'elements':
-    # TODO: chech pixel values of the model output
-    # and adjust relabel accordingly.
-        img[img == 11] = 240
-        img[img == 10] = 220
-        img[img == 9] = 200
-        img[img == 8] = 180
-        img[img == 7] = 160
-        img[img == 6] = 140
-        img[img == 5] = 120
-        img[img == 4] = 100
-        img[img == 3] = 80
-        img[img == 2] = 60
-        img[img == 1] = 40
-        img[img == 0] = 20
-        img[img == 255] = 0
+        img[img == 3] = 200  # resistor
+        img[img == 2] = 150  # capacitor ceramic
+        img[img == 1] = 50   # capacitor electrolytic
+        # background remains 0
 
     return img
 

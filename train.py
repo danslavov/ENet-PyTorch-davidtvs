@@ -46,7 +46,6 @@ class Train:
         # train() and freeze_layers() are called once in the beginning of training
         # and then again after validation -- to reduce the number of calls.
         # self.model.train()
-        # self.model = utils.freeze_layers(self.model)
 
         epoch_loss = 0.0
         self.metric.reset()

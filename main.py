@@ -151,14 +151,14 @@ def load_dataset(dataset):
 
 def train(train_loader, val_loader, class_weights, class_encoding):
 
-    # train_init_start = time.time()
+    train_init_start = time.time()
 
     print("\nTraining...\n")
 
     num_classes = len(class_encoding)
 
     # Intialize ENet
-    # model = ENet(num_classes).to(device)
+    model = ENet(num_classes).to(device)
 
     # INFO: mine
     # Freeze layers for the first time here, before initializing the optimizer.
@@ -167,7 +167,7 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # INFO: mine
     # If a pretrained model on CamVid is needed (for transfer learning),
     # it should be initialized with 12 classes:
-    model = ENet(12).to(device)
+    # model = ENet(12).to(device)
 
     # Check if the network architecture is correct
     # print(model)
@@ -175,19 +175,19 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # INFO: mine
     # Load the pre-trained model state to the ENet model
     # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
-    model = utils.load_checkpoint(model, args.load_dir_pretrained, args.name)[0]
+    # model = utils.load_checkpoint(model, args.load_dir_pretrained, args.name)[0]
 
     # INFO: mine
     # If model is pretrained on CamVid, the size of the final layer should be changed
     # according to the current number of classes
-    model.transposed_conv = nn.ConvTranspose2d(
-        16,
-        num_classes,
-        kernel_size=3,
-        stride=2,
-        padding=1,
-        bias=False)
-    model = model.to(device)
+    # model.transposed_conv = nn.ConvTranspose2d(
+    #     16,
+    #     num_classes,
+    #     kernel_size=3,
+    #     stride=2,
+    #     padding=1,
+    #     bias=False)
+    # model = model.to(device)
 
     # We are going to use the CrossEntropyLoss loss function as it's most
     # frequently used in classification problems with multiple classes which
@@ -227,8 +227,8 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         #     model, optimizer, args.load_dir, args.name)
 
         # INFO: don't load previous state of the optimizer
-        model, _, start_epoch, best_miou = utils.load_checkpoint(
-            model, optimizer, args.load_dir, args.name)
+        model, start_epoch, best_miou = utils.load_checkpoint(
+            model, args.load_dir, args.name)
 
 
         print("Resuming from model: Start epoch = {0} "
@@ -247,14 +247,21 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     train = Train(model, train_loader, optimizer, criterion, metric, device)
     val = Test(model, val_loader, criterion, metric, device)
 
-    # train_init_end = time.time()
-    # print('Train initialization time: {}'.format(train_init_end - train_init_start))
+    train_init_end = time.time()
+    print('Train initialization time: {}'.format(train_init_end - train_init_start))
 
     # INFO: mine
     # To avoid calling train() followed by freeze_layers() in the beginning of each epoch,
     # call them here and then after each validation.
+
+    start = time.time()
     model.train()
+    print(time.time() - start)
+    start = time.time()
+
     utils.freeze_encoder(model)
+    print(time.time() - start)
+
 
     nonimprovement = 0  # INFO: mine. How many validations didn't show improvement.
 
@@ -268,16 +275,16 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         epoch_end = time.time()
         epoch_time = epoch_end - epoch_start
 
-        print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
-              format(epoch, epoch_loss, miou, epoch_time))
-
-        with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
-            log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
-                           .format(epoch, epoch_loss, miou, epoch_time))
+        # print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
+        #       format(epoch, epoch_loss, miou, epoch_time))
+        #
+        # with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
+        #     log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
+        #                    .format(epoch, epoch_loss, miou, epoch_time))
 
         # INFO: Validate each 5 epochs; orig: each 10 epochs
         if (epoch + 1) % 5 == 0 or epoch + 1 == args.epochs:
-            print(">>>> [Epoch: {0:d}] Validation".format(epoch))
+            # print(">>>> [Epoch: {0:d}] Validation".format(epoch))
 
             val_start = time.time()
             loss, (iou, miou) = val.run_epoch(args.print_step)
@@ -304,7 +311,7 @@ def train(train_loader, val_loader, class_weights, class_encoding):
                     log_file.write('{0}: {1:.4f}; '.format(key, class_iou))
                 log_file.write('\n')
 
-            # Save the model if it's the best thus far
+                # Save the model if it's the best thus far
                 if miou > best_miou:
                     print("\nBest model thus far. Saving...\n")
                     best_miou = miou
@@ -312,11 +319,12 @@ def train(train_loader, val_loader, class_weights, class_encoding):
                                           args)
 
                     log_file.write('S A V E\n')
+                    nonimprovement = 0
                 else:
                     nonimprovement += 1
 
             # INFO: When 2 validations don't show improvement, stop training to avoid overfit.
-            # (Despite model is not saved, it could show improvement later and be saved
+            # (Despite model is not being saved, it could show improvement later and be saved
             # when would have probably already become overfitted.
             if nonimprovement > 1:
                 print('Training stopped due to lack of improvement!')
@@ -348,7 +356,6 @@ def test(model, test_loader, class_weights, class_encoding):
     print(">>>> Running test dataset")
 
     loss, (iou, miou) = test.run_epoch(args.print_step)
-    class_iou = dict(zip(class_encoding.keys(), iou))
 
     print(">>>> Avg. loss: {0:.4f} | Mean IoU: {1:.4f}".format(loss, miou))
 
@@ -426,7 +433,7 @@ if __name__ == '__main__':
 
     if args.mode.lower() in {'test', 'full'}:
         if args.mode.lower() == 'test':
-            # Intialize a new ENet model
+            # Initialize a new ENet model
             num_classes = len(class_encoding)
             model = ENet(num_classes).to(device)
 
@@ -440,8 +447,7 @@ if __name__ == '__main__':
         #                               args.name)[0]
 
         # Load the best so far model state. Don't load optimizer state.
-
-        model = utils.load_checkpoint(model, optimizer, args.load_dir, args.name)[0]
+        model = utils.load_checkpoint(model, args.load_dir, args.name)[0]
 
         # if args.mode.lower() == 'test':
         #     print(model)
