@@ -2,6 +2,14 @@ import os
 from collections import OrderedDict
 import torch.utils.data as data
 from . import utils
+from args import get_arguments
+
+# Get the arguments
+args = get_arguments()
+
+
+def get_color_encoding():
+    return Cityscapes.color_encoding
 
 
 class Cityscapes(data.Dataset):
@@ -20,16 +28,16 @@ class Cityscapes(data.Dataset):
 
     """
     # Training dataset root folders
-    train_folder = "leftImg8bit_trainvaltest/leftImg8bit/train"
-    train_lbl_folder = "gtFine_trainvaltest/gtFine/train"
+    train_folder = "leftImg8bit/train"
+    train_lbl_folder = "gtFine/train"
 
     # Validation dataset root folders
-    val_folder = "leftImg8bit_trainvaltest/leftImg8bit/val"
-    val_lbl_folder = "gtFine_trainvaltest/gtFine/val"
+    val_folder = "leftImg8bit/val"
+    val_lbl_folder = "gtFine/val"
 
     # Test dataset root folders
-    test_folder = "leftImg8bit_trainvaltest/leftImg8bit/test"
-    test_lbl_folder = "gtFine_trainvaltest/gtFine/test"
+    test_folder = "leftImg8bit/test"
+    test_lbl_folder = "gtFine/test"
 
     # Filters to find the images
     img_extension = '.png'

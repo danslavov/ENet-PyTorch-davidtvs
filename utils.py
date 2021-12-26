@@ -10,6 +10,7 @@ from args import get_arguments
 from torchvision import transforms
 from PIL import Image
 from data.camvid import get_color_encoding as get_color_encoding_CamVid
+from data.cityscapes import get_color_encoding as get_color_encoding_Cityscapes
 from data.elements import get_color_encoding as get_color_encoding_Elements
 
 
@@ -18,6 +19,8 @@ args = get_arguments()
 # Make list of color_encoding values (to form a palette)
 if args.dataset == 'camvid':
     color_encoding = get_color_encoding_CamVid()
+elif args.dataset == 'cityscapes':
+    color_encoding = get_color_encoding_Cityscapes()
 elif args.dataset == 'elements':
     color_encoding = get_color_encoding_Elements()
 colors = list(color_encoding.values())
@@ -174,7 +177,7 @@ def relabel(img):
     return img
 
 
-def save_masks(img_path, class_map_numpy):  # INFO: mine
+def save_masks(img_path, class_map_numpy):  # INFO: mine, for visualization
 
     # extract image name and extension from image path
     img_name_and_extension = img_path.split(os.path.sep)[-1]
@@ -302,9 +305,6 @@ def class_channels_to_rgb(input_batch, output_batch, label_batch):
 
         counter += 1
 
-    print('exit() called in file utils.py, line 311')
-    exit()
-
     return rgb_batch
 
 
@@ -333,13 +333,3 @@ def print_trainable_state(model):
         for parameter in module.parameters():
             print(parameter.requires_grad)
         print_trainable_state(module)
-
-
-
-
-
-
-
-
-
-

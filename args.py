@@ -19,7 +19,7 @@ def get_arguments():
     parser.add_argument(
         "--resume",
         action='store_true',
-        default=True,
+        default=False,
         help=("The model found in \"--load-dir/--name/\" and filename "
               "\"--name.h5\" is loaded."))
 
@@ -63,12 +63,13 @@ def get_arguments():
     parser.add_argument(
         "--dataset",
         choices=['camvid', 'cityscapes', 'elements'],
-        default='elements',
+        default='cityscapes',
         help="Dataset to use. Default: camvid")
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="data/Elements",
+        # default="data/Cityscapes",
+        default="C:/Users/Admin/PycharmProjects/Lightweight-Segmentation/datasets/citys",
         # default="data/tmp",  # to check single output as RGB image
         help="Path to the root directory of the selected dataset. "
         "Default: data/CamVid")
@@ -81,12 +82,12 @@ def get_arguments():
     parser.add_argument(
         "--height",
         type=int,
-        default=350,
+        default=700,
         help="The image height. Default: 360")
     parser.add_argument(
         "--width",
         type=int,
-        default=350,
+        default=700,
         help="The image width. Default: 480")
     parser.add_argument(
         "--weighing",
@@ -105,7 +106,7 @@ def get_arguments():
     parser.add_argument(
         "--workers",
         type=int,
-        default=4,
+        default=3,
         help="Number of subprocesses to use for data loading. Default: 4")
     parser.add_argument(
         "--print-step",

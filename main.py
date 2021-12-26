@@ -162,7 +162,7 @@ def train(train_loader, val_loader, class_weights, class_encoding):
 
     # INFO: mine
     # Freeze layers for the first time here, before initializing the optimizer.
-    # utils.freeze_encoder(model)
+    utils.freeze_encoder(model)
 
     # INFO: mine
     # If a pretrained model on CamVid is needed (for transfer learning),
@@ -195,7 +195,6 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
     # ENet authors used Adam as the optimizer
-
     # optimizer = optim.Adam(
     #     model.parameters(),
     #     lr=args.learning_rate,
@@ -223,12 +222,12 @@ def train(train_loader, val_loader, class_weights, class_encoding):
 
     # Optionally resume from a checkpoint
     if args.resume:
-        # model, optimizer, start_epoch, best_miou = utils.load_checkpoint(
-        #     model, optimizer, args.load_dir, args.name)
+        model, optimizer, start_epoch, best_miou = utils.load_checkpoint(
+            model, optimizer, args.load_dir, args.name)
 
-        # INFO: don't load previous state of the optimizer
-        model, start_epoch, best_miou = utils.load_checkpoint(
-            model, args.load_dir, args.name)
+        # INFO: mine - don't load previous state of the optimizer
+        # model, start_epoch, best_miou = utils.load_checkpoint(
+        #     model, args.load_dir, args.name)
 
 
         print("Resuming from model: Start epoch = {0} "
@@ -253,15 +252,8 @@ def train(train_loader, val_loader, class_weights, class_encoding):
     # INFO: mine
     # To avoid calling train() followed by freeze_layers() in the beginning of each epoch,
     # call them here and then after each validation.
-
-    start = time.time()
     model.train()
-    print(time.time() - start)
-    start = time.time()
-
     utils.freeze_encoder(model)
-    print(time.time() - start)
-
 
     nonimprovement = 0  # INFO: mine. How many validations didn't show improvement.
 
@@ -275,16 +267,16 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         epoch_end = time.time()
         epoch_time = epoch_end - epoch_start
 
-        # print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
-        #       format(epoch, epoch_loss, miou, epoch_time))
-        #
-        # with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
-        #     log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
-        #                    .format(epoch, epoch_loss, miou, epoch_time))
+        print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}".
+              format(epoch, epoch_loss, miou, epoch_time))
+
+        with(open('save/ENet_Elements/log.txt', 'a')) as log_file:
+            log_file.write('Epoch: {0:d} | Avg. loss: {1:.4f} | Mean IoU: {2:.4f} | Time: {3:.4f}\n'
+                           .format(epoch, epoch_loss, miou, epoch_time))
 
         # INFO: Validate each 5 epochs; orig: each 10 epochs
         if (epoch + 1) % 5 == 0 or epoch + 1 == args.epochs:
-            # print(">>>> [Epoch: {0:d}] Validation".format(epoch))
+            print(">>>> [Epoch: {0:d}] Validation".format(epoch))
 
             val_start = time.time()
             loss, (iou, miou) = val.run_epoch(args.print_step)
@@ -435,19 +427,30 @@ if __name__ == '__main__':
         if args.mode.lower() == 'test':
             # Initialize a new ENet model
             num_classes = len(class_encoding)
-            model = ENet(num_classes).to(device)
+            # model = ENet(num_classes).to(device)
+            model = ENet(12).to(device)  # TODO: delete and uncomment previous line
 
         # Initialize a optimizer just so we can retrieve the model from the
         # checkpoint
-        optimizer = optim.Adam(model.parameters())
+        # optimizer = optim.Adam(model.parameters())
 
         # Load the pre-trained model state to the ENet model
         # downloaded from https://github.com/davidtvs/PyTorch-ENet/tree/master/save
-        # model = utils.load_checkpoint(model, optimizer, args.load_dir_pretrained,
-        #                               args.name)[0]
+        model = utils.load_checkpoint(model, args.load_dir_pretrained,
+                                      args.name)[0]
+
+        # TODO: delete
+        model.transposed_conv = nn.ConvTranspose2d(
+            16,
+            num_classes,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            bias=False)
+        model = model.to(device)
 
         # Load the best so far model state. Don't load optimizer state.
-        model = utils.load_checkpoint(model, args.load_dir, args.name)[0]
+        # model = utils.load_checkpoint(model, args.load_dir, args.name)[0]
 
         # if args.mode.lower() == 'test':
         #     print(model)
